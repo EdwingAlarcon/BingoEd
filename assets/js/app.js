@@ -676,6 +676,14 @@ class BingoApp {
                     if (player) {
                         player.cards = data.data.cards;
                         this.multiplayer.players.set(data.data.playerId, player);
+
+                        // Actualizar el contador nextCardNumber del anfitrión
+                        // para que el próximo jugador reciba números únicos
+                        const maxCardNumber = Math.max(...data.data.cards);
+                        if (maxCardNumber >= this.multiplayer.nextCardNumber) {
+                            this.multiplayer.nextCardNumber = maxCardNumber + 1;
+                        }
+
                         this.updatePlayersUI();
                     }
                 }
