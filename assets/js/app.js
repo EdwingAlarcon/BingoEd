@@ -2670,6 +2670,15 @@ class BingoApp {
     }
 
     showChatNotification(message) {
+        // Limitar a máximo 3 notificaciones
+        const existingNotifications = document.querySelectorAll('.chat-notification');
+        if (existingNotifications.length >= 3) {
+            // Remover la más antigua
+            const oldest = existingNotifications[0];
+            oldest.classList.add('fade-out');
+            setTimeout(() => oldest.remove(), 300);
+        }
+
         // Crear notificación visual
         const notification = document.createElement('div');
         notification.className = 'chat-notification';
@@ -2688,6 +2697,14 @@ class BingoApp {
         // Agregar al body
         document.body.appendChild(notification);
 
+        // Ajustar posición según el número de notificaciones
+        setTimeout(() => {
+            const allNotifications = document.querySelectorAll('.chat-notification');
+            allNotifications.forEach((notif, index) => {
+                notif.style.top = `${80 + index * 100}px`;
+            });
+        }, 10);
+
         // Click para ir al chat
         notification.addEventListener('click', () => {
             const chatPanel = document.getElementById('chatPanel');
@@ -2696,6 +2713,13 @@ class BingoApp {
                 chatPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
             notification.remove();
+            // Reajustar posiciones
+            setTimeout(() => {
+                const remaining = document.querySelectorAll('.chat-notification');
+                remaining.forEach((notif, index) => {
+                    notif.style.top = `${80 + index * 100}px`;
+                });
+            }, 10);
         });
 
         // Reproducir sonido de notificación
@@ -2706,7 +2730,14 @@ class BingoApp {
         // Auto-remover después de 5 segundos
         setTimeout(() => {
             notification.classList.add('fade-out');
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(() => {
+                notification.remove();
+                // Reajustar posiciones de las restantes
+                const remaining = document.querySelectorAll('.chat-notification');
+                remaining.forEach((notif, index) => {
+                    notif.style.top = `${80 + index * 100}px`;
+                });
+            }, 300);
         }, 5000);
     }
 
