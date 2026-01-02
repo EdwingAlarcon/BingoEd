@@ -1242,7 +1242,14 @@ class BingoApp {
         // Cerrar modal de configuración
         document.getElementById('setupModal').classList.remove('active');
 
-        // Generar cartones
+        // Solo generar cartones si NO es modo multijugador join
+        // Los jugadores que se unen esperarán a recibir game_state para generar cartones
+        if (gameType === 'join') {
+            // No generar cartones todavía, esperar a recibir game_state del anfitrión
+            return;
+        }
+
+        // Generar cartones (solo para host o modo individual)
         this.gameState.cards = [];
         const assignedCards = []; // Para tracking de números asignados
         for (let i = 0; i < this.config.numCards; i++) {
