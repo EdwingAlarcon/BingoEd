@@ -616,11 +616,10 @@ class BingoApp {
                 break;
 
             case 'player_list':
-                // Actualizar lista de jugadores
+                // Actualizar lista de jugadores con toda la información
                 data.data.forEach(player => {
-                    if (!this.multiplayer.players.has(player.id)) {
-                        this.multiplayer.players.set(player.id, player);
-                    }
+                    // Actualizar o agregar jugador con toda su información
+                    this.multiplayer.players.set(player.id, player);
                 });
                 this.updatePlayersUI();
                 break;
@@ -689,6 +688,12 @@ class BingoApp {
                         }
 
                         this.updatePlayersUI();
+
+                        // Broadcast la lista actualizada de jugadores a todos
+                        this.broadcastToPlayers({
+                            type: 'player_list',
+                            data: Array.from(this.multiplayer.players.values()),
+                        });
                     }
                 }
                 break;
@@ -1396,6 +1401,12 @@ class BingoApp {
                 if (hostPlayer) {
                     hostPlayer.cards = assignedCards;
                     this.updatePlayersUI();
+
+                    // Broadcast la lista actualizada de jugadores
+                    this.broadcastToPlayers({
+                        type: 'player_list',
+                        data: Array.from(this.multiplayer.players.values()),
+                    });
                 }
             }
 
