@@ -723,6 +723,16 @@ class BingoApp {
         }
     }
 
+    updateUserNameDisplay() {
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('currentUserName');
+
+        if (userInfo && userName) {
+            userName.textContent = this.config.playerName;
+            userInfo.style.display = 'flex';
+        }
+    }
+
     updatePlayersUI() {
         const playersList = document.getElementById('playersList');
         const playersCount = document.getElementById('playersCountList');
@@ -1232,6 +1242,9 @@ class BingoApp {
         this.config.gameMode = document.getElementById('gameMode').value;
         this.config.autoMark = document.getElementById('autoMark').checked;
         this.config.drawSpeed = parseInt(document.getElementById('drawSpeed').value);
+
+        // Mostrar nombre del usuario en el header
+        this.updateUserNameDisplay();
 
         const gameType = document.getElementById('gameType').value;
 
