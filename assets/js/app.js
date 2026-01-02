@@ -1443,7 +1443,9 @@ class BingoApp {
         const winnerDetailsEl = document.getElementById('winnerDetails');
         const continueBtn = document.getElementById('continueGame');
 
-        winnerNameEl.textContent = winner.playerName;
+        // Mostrar nombre del jugador (puede venir del objeto winner o usar el actual)
+        const playerName = winner.playerName || this.config.playerName;
+        winnerNameEl.textContent = playerName;
 
         // Mensaje mejorado con más detalles
         let mensaje = '';
@@ -1460,6 +1462,11 @@ class BingoApp {
             premio = this.prizes.bingo;
         } else {
             mensaje = `✨ ¡${winner.winType}!`;
+            // Intentar obtener el premio según el tipo
+            const prizeType = this.getPrizeType(winner.winType);
+            if (prizeType === 'firstLine') premio = this.prizes.firstLine;
+            else if (prizeType === 'secondLine') premio = this.prizes.secondLine;
+            else if (prizeType === 'bingo') premio = this.prizes.bingo;
         }
 
         // Formatear el premio
@@ -1469,9 +1476,13 @@ class BingoApp {
                 premioTexto = `<div style="font-size: 1.5rem; color: #10b981; font-weight: bold; margin: 0.8rem 0;">
                     💰 Premio: $${premio.value.toLocaleString('es-CO')} ${this.prizes.currency}
                 </div>`;
-            } else {
+            } else if (premio.type === 'product') {
                 premioTexto = `<div style="font-size: 1.3rem; color: #10b981; font-weight: bold; margin: 0.8rem 0;">
                     🎁 Premio: ${premio.value}
+                </div>`;
+            } else {
+                premioTexto = `<div style="font-size: 1.3rem; color: #10b981; font-weight: bold; margin: 0.8rem 0;">
+                    🎁 Premio: ${premio.description || premio.value}
                 </div>`;
             }
         }
