@@ -397,6 +397,17 @@ class BingoApp {
 
                 this.updateConnectionUI('connected');
                 this.updateAdminPermissions(); // Restringir acceso para invitado
+
+                // Ocultar controles de juego para invitados
+                const drawBallBtn = document.getElementById('drawBall');
+                const autoDrawBtn = document.getElementById('autoDraw');
+                const newGameBtn = document.getElementById('newGame');
+                const pauseBtn = document.getElementById('pauseGame');
+
+                if (drawBallBtn) drawBallBtn.style.display = 'none';
+                if (autoDrawBtn) autoDrawBtn.style.display = 'none';
+                if (newGameBtn) newGameBtn.style.display = 'none';
+                if (pauseBtn) pauseBtn.style.display = 'none';
             });
 
             conn.on('data', data => {
@@ -2655,14 +2666,20 @@ class BingoApp {
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        // Notificar si el chat está cerrado y el mensaje no es del usuario actual
+        // Notificar solo si:
+        // 1. El mensaje NO es del usuario actual
+        // 2. Y el chat NO está visible O NO está en vista
         if (message.player !== this.config.playerName) {
+            const chatPanel = document.getElementById('chatPanel');
             const chatVisible =
                 chatPanel &&
                 chatPanel.style.display !== 'none' &&
                 window.getComputedStyle(chatPanel).display !== 'none';
 
-            if (!chatVisible || !this.isChatInView()) {
+            // Solo mostrar notificación si el chat está oculto o fuera de vista
+            if (!chatVisible) {
+                this.showChatNotification(message);
+            } else if (!this.isChatInView()) {
                 this.showChatNotification(message);
             }
         }

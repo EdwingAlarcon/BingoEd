@@ -748,8 +748,9 @@ body.dark-theme .ball-label {
 }
 
 body.dark-theme .number-cell {
-    background: #334155;
+    background: #475569;
     color: var(--text-primary);
+    border: 1px solid #64748b;
 }
 
 .number-cell.called {
@@ -757,6 +758,11 @@ body.dark-theme .number-cell {
     color: white;
     transform: scale(0.95);
     box-shadow: var(--shadow-md);
+}
+
+body.dark-theme .number-cell.called {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
 .number-cell.called.recent {
@@ -906,8 +912,9 @@ body.dark-theme .card-number {
 }
 
 body.dark-theme .bingo-cell {
-    background: #334155;
+    background: #475569;
     color: var(--text-primary);
+    border: 1px solid #64748b;
 }
 
 .bingo-cell.header {
@@ -927,6 +934,11 @@ body.dark-theme .bingo-cell {
     background: linear-gradient(135deg, var(--success-color), #059669);
     color: white;
     transform: scale(0.9);
+}
+
+body.dark-theme .bingo-cell.marked {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 
 .bingo-cell.marked::after {
