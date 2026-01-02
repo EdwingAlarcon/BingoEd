@@ -193,6 +193,9 @@ class BingoApp {
         document.getElementById('pauseGame').addEventListener('click', () => this.pauseGame());
         document.getElementById('newGame').addEventListener('click', () => this.resetGame());
 
+        // Botón de reset de estadísticas
+        document.getElementById('resetStats').addEventListener('click', () => this.resetStats());
+
         // Acciones Rápidas
         document.getElementById('checkBingo').addEventListener('click', () => this.checkAllCards());
         document.getElementById('printCards').addEventListener('click', () => this.printCards());
@@ -1471,6 +1474,13 @@ class BingoApp {
         const modal = document.getElementById('winnerModal');
         modal.classList.remove('active');
 
+        // Guardar el tiempo del juego en estadísticas cuando termina
+        if (this.gameState.isPlaying && this.gameState.gameTime > 0) {
+            this.stats.totalTime += this.gameState.gameTime;
+            this.saveStats();
+            this.updateStatsDisplay();
+        }
+
         // Si es el anfitrión y el juego sigue activo, puede continuar
         if (this.multiplayer.isHost && this.gameState.isPlaying) {
             // El anfitrión puede decidir continuar o reiniciar
@@ -2066,9 +2076,11 @@ class BingoApp {
         document.getElementById('mostFrequent').textContent = mostFrequent || '-';
 
         // Tiempo promedio
-        if (this.stats.gamesPlayed > 0) {
+        if (this.stats.gamesPlayed > 0 && this.stats.totalTime > 0) {
             const avgTime = Math.floor(this.stats.totalTime / this.stats.gamesPlayed);
             document.getElementById('avgTime').textContent = this.formatTime(avgTime);
+        } else {
+            document.getElementById('avgTime').textContent = '-';
         }
     }
 
