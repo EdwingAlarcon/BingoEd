@@ -350,6 +350,14 @@ class BingoApp {
         this.multiplayer.isHost = false;
         this.multiplayer.roomCode = roomCode.toUpperCase();
 
+        // Verificar si hay una sesión previa
+        const savedSession = localStorage.getItem(`session_${roomCode}`);
+        let sessionData = null;
+        if (savedSession) {
+            sessionData = JSON.parse(savedSession);
+            console.log('Sesión previa encontrada:', sessionData);
+        }
+
         // Inicializar PeerJS
         this.multiplayer.peer = new Peer({
             config: {
@@ -371,13 +379,15 @@ class BingoApp {
                 console.log('Conectado al anfitrión');
                 this.multiplayer.connections.set('host', conn);
 
-                // Enviar información del jugador
+                // Enviar información del jugador (con datos de sesión si existen)
                 conn.send({
                     type: 'player_join',
                     data: {
                         id: id,
                         name: this.config.playerName,
                         numCards: this.config.numCards,
+                        sessionId: sessionData ? sessionData.sessionId : Date.now(),
+                        previousCards: sessionData ? sessionData.cards : null,
                     },
                 });
 
@@ -421,9 +431,31 @@ class BingoApp {
             // Remover jugador de la lista
             for (const [id, connection] of this.multiplayer.connections) {
                 if (connection === conn) {
-                    this.multiplayer.players.delete(id);
+                    const player = this.multiplayer.players.get(id);
+                    const playerName = player ? player.name : 'Jugador';
+                    const playerCards = player ? player.cards : [];
+
+                    // Marcar cartones como desconectados en lugar de eliminar
+                    if (player) {
+                        player.disconnected = true;
+                        player.disconnectedAt = Date.now();
+                        this.multiplayer.players.set(id, player);
+                    }
+
                     this.multiplayer.connections.delete(id);
                     this.updatePlayersUI();
+
+                    // Notificar a todos los jugadores
+                    this.addSystemMessage(`${playerName} se ha desconectado`);
+                    this.broadcastToPlayers({
+                        type: 'player_list',
+                        data: Array.from(this.multiplayer.players.values()),
+                    });
+
+                    // Log para el anfitrión
+                    if (playerCards.length > 0) {
+                        console.log(`Cartones huérfanos: #${playerCards.join(', #')}`);
+                    }
                     break;
                 }
             }
@@ -434,13 +466,39 @@ class BingoApp {
         switch (data.type) {
             case 'player_join':
                 if (this.multiplayer.isHost) {
+                    // Verificar si es una reconexión
+                    let existingPlayer = null;
+                    if (data.data.sessionId) {
+                        // Buscar jugador con mismo sessionId
+                        for (const [playerId, player] of this.multiplayer.players) {
+                            if (player.sessionId === data.data.sessionId) {
+                                existingPlayer = player;
+                                // Eliminar la entrada antigua
+                                this.multiplayer.players.delete(playerId);
+                                this.multiplayer.connections.delete(playerId);
+                                break;
+                            }
+                        }
+                    }
+
+                    // Si es reconexión, mantener cartones previos
+                    const playerCards = existingPlayer
+                        ? existingPlayer.cards
+                        : data.data.cards || [];
+
                     // Agregar jugador a la lista
                     this.multiplayer.players.set(data.data.id, {
                         ...data.data,
                         isHost: false,
-                        cards: data.data.cards || [], // Guardar información de cartones
+                        cards: playerCards,
+                        sessionId: data.data.sessionId || Date.now(),
                     });
                     this.multiplayer.connections.set(data.data.id, conn);
+
+                    // Si es reconexión, notificar
+                    if (existingPlayer) {
+                        this.addSystemMessage(`${data.data.name} se ha reconectado`);
+                    }
 
                     // Enviar estado actual del juego
                     conn.send({
@@ -592,6 +650,18 @@ class BingoApp {
                                 },
                             });
                         }
+
+                        // Guardar sesión en localStorage
+                        const sessionData = {
+                            sessionId: Date.now(),
+                            cards: assignedCards,
+                            playerName: this.config.playerName,
+                            timestamp: Date.now(),
+                        };
+                        localStorage.setItem(
+                            `session_${this.multiplayer.roomCode}`,
+                            JSON.stringify(sessionData)
+                        );
 
                         // Renderizar cartones
                         this.renderBingoCards();
@@ -779,8 +849,14 @@ class BingoApp {
                     'padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bg-tertiary); border-radius: var(--border-radius-sm); border-left: 3px solid var(--primary-color);';
 
                 // Icono y nombre
-                const playerIcon = player.isHost ? 'fa-crown' : 'fa-user';
-                const playerName = `<strong>${player.name}</strong>`;
+                const playerIcon = player.isHost
+                    ? 'fa-crown'
+                    : player.disconnected
+                    ? 'fa-user-slash'
+                    : 'fa-user';
+                const playerName = player.disconnected
+                    ? `<strong style="opacity: 0.5;">${player.name}</strong> <span style="color: #ef4444; font-size: 0.75rem;">(Desconectado)</span>`
+                    : `<strong>${player.name}</strong>`;
                 const hostBadge = player.isHost
                     ? '<span style="background: var(--accent-color); color: white; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem;">ANFITRIÓN</span>'
                     : '';
