@@ -626,9 +626,13 @@ class BingoApp {
                 break;
 
             case 'winner_announced':
-                // Mostrar ganador en todos los clientes
-                if (!this.multiplayer.isHost) {
-                    this.addToWinnersList(data.data);
+                // Mostrar ganador en TODOS los clientes (incluyendo el ganador)
+                this.showWinnerModal(data.data);
+                this.addToWinnersList(data.data);
+
+                // Detener auto-sorteo en todos los clientes si está activo
+                if (this.gameState.autoPlay) {
+                    this.toggleAutoDraw();
                 }
                 break;
 
@@ -1003,6 +1007,8 @@ class BingoApp {
         // Reproducir sonido
         if (this.config.soundEnabled) {
             this.playSound('draw');
+            // Anunciar el número con síntesis de voz
+            this.announceNumber(number);
         }
 
         // Broadcast en modo multijugador
@@ -1130,6 +1136,11 @@ class BingoApp {
         this.stats.bingosWon++;
         this.saveStats();
 
+        // Detener auto-sorteo automáticamente cuando hay ganador
+        if (this.gameState.autoPlay) {
+            this.toggleAutoDraw();
+        }
+
         // Marcar cartón como ganador
         const cardElement = document.querySelector(`[data-card-id="${card.id}"]`);
         if (cardElement) {
@@ -1168,18 +1179,80 @@ class BingoApp {
 
     showWinnerModal(winner) {
         const modal = document.getElementById('winnerModal');
-        document.getElementById('winnerName').textContent = winner.playerName;
-        document.getElementById(
-            'winnerDetails'
-        ).textContent = `${winner.winType} - Cartón #${winner.cardId} - ${winner.numbers} números`;
-        modal.classList.add('active');
+        const winnerNameEl = document.getElementById('winnerName');
+        const winnerDetailsEl = document.getElementById('winnerDetails');
+        const continueBtn = document.getElementById('continueGame');
 
-        // Crear confetti
+        winnerNameEl.textContent = winner.playerName;
+
+        // Mensaje mejorado con más detalles
+        let mensaje = '';
+        let premio = null;
+
+        if (winner.winType === 'Primera Línea') {
+            mensaje = '🎉 ¡Completó la Primera Línea!';
+            premio = this.prizes.firstLine;
+        } else if (winner.winType === 'Segunda Línea') {
+            mensaje = '🎊 ¡Completó la Segunda Línea!';
+            premio = this.prizes.secondLine;
+        } else if (winner.winType === 'Bingo') {
+            mensaje = '🏆 ¡BINGO COMPLETO!';
+            premio = this.prizes.bingo;
+        } else {
+            mensaje = `✨ ¡${winner.winType}!`;
+        }
+
+        // Formatear el premio
+        let premioTexto = '';
+        if (premio) {
+            if (premio.type === 'money') {
+                premioTexto = `<div style="font-size: 1.5rem; color: #10b981; font-weight: bold; margin: 0.8rem 0;">
+                    💰 Premio: $${premio.value.toLocaleString('es-CO')} ${this.prizes.currency}
+                </div>`;
+            } else {
+                premioTexto = `<div style="font-size: 1.3rem; color: #10b981; font-weight: bold; margin: 0.8rem 0;">
+                    🎁 Premio: ${premio.value}
+                </div>`;
+            }
+        }
+
+        winnerDetailsEl.innerHTML = `
+            <div style="font-size: 1.3rem; margin-bottom: 0.5rem;">${mensaje}</div>
+            ${premioTexto}
+            <div>Cartón #${winner.cardId}</div>
+            <div>${winner.numbers} números sorteados</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                Tiempo: ${this.formatTime(winner.time)}
+            </div>
+        `;
+
+        // Mostrar/ocultar botón de continuar según el rol
+        if (this.multiplayer.isHost) {
+            continueBtn.style.display = 'block';
+            continueBtn.textContent = 'Continuar Juego';
+        } else {
+            continueBtn.style.display = 'block';
+            continueBtn.textContent = 'Cerrar';
+        }
+
+        modal.classList.add('active');
         this.createConfetti();
+
+        // Reproducir sonido extra para destacar
+        if (this.config.soundEnabled) {
+            setTimeout(() => this.playSound('win'), 300);
+        }
     }
 
     closeWinnerModal() {
-        document.getElementById('winnerModal').classList.remove('active');
+        const modal = document.getElementById('winnerModal');
+        modal.classList.remove('active');
+
+        // Si es el anfitrión y el juego sigue activo, puede continuar
+        if (this.multiplayer.isHost && this.gameState.isPlaying) {
+            // El anfitrión puede decidir continuar o reiniciar
+            // Por ahora, solo cerramos el modal
+        }
     }
 
     addToWinnersList(winner) {
@@ -1203,29 +1276,52 @@ class BingoApp {
         const confetti = document.querySelector('.confetti');
         confetti.innerHTML = '';
 
-        const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'];
+        const colors = [
+            '#6366f1',
+            '#ec4899',
+            '#f59e0b',
+            '#10b981',
+            '#3b82f6',
+            '#8b5cf6',
+            '#ef4444',
+        ];
 
-        for (let i = 0; i < 50; i++) {
+        // Aumentar la cantidad de confetti para un efecto más impresionante
+        for (let i = 0; i < 150; i++) {
             const piece = document.createElement('div');
             piece.style.position = 'absolute';
-            piece.style.width = '10px';
-            piece.style.height = '10px';
+
+            // Variar el tamaño de las piezas
+            const size = 8 + Math.random() * 12;
+            piece.style.width = size + 'px';
+            piece.style.height = size + 'px';
             piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
             piece.style.left = Math.random() * 100 + '%';
-            piece.style.top = -10 + 'px';
-            piece.style.opacity = Math.random();
-            piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+            piece.style.top = -20 + 'px';
+            piece.style.opacity = 0.7 + Math.random() * 0.3;
+            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0%';
+
+            // Rotación inicial
+            const initialRotation = Math.random() * 360;
+            piece.style.transform = `rotate(${initialRotation}deg)`;
 
             confetti.appendChild(piece);
 
-            // Animar
-            const duration = 2000 + Math.random() * 2000;
-            const delay = Math.random() * 500;
+            // Animar con más variedad
+            const duration = 3000 + Math.random() * 2000;
+            const delay = Math.random() * 800;
+            const horizontalMovement = Math.random() * 60 - 30; // -30 a +30
+            const rotationSpeed = Math.random() * 720 - 360; // -360 a +360
 
             setTimeout(() => {
-                piece.style.transition = `top ${duration}ms linear, left ${duration}ms linear`;
-                piece.style.top = '100%';
-                piece.style.left = parseFloat(piece.style.left) + (Math.random() * 40 - 20) + '%';
+                piece.style.transition = `top ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                                         left ${duration}ms ease-in-out, 
+                                         transform ${duration}ms linear, 
+                                         opacity ${duration}ms linear`;
+                piece.style.top = '120%';
+                piece.style.left = parseFloat(piece.style.left) + horizontalMovement + '%';
+                piece.style.transform = `rotate(${initialRotation + rotationSpeed}deg)`;
+                piece.style.opacity = '0';
             }, delay);
         }
     }
@@ -1924,6 +2020,40 @@ class BingoApp {
         }
     }
 
+    announceNumber(number) {
+        if (!this.config.soundEnabled || !('speechSynthesis' in window)) return;
+
+        // Cancelar cualquier anuncio previo
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance();
+
+        // Texto a anunciar: número y recordatorio del tipo de juego
+        let texto = `Número ${number}`;
+
+        // Añadir información del tipo de juego cada 5 números
+        if (this.gameState.calledNumbers.length % 5 === 0) {
+            const modoTexto =
+                {
+                    full: 'Bingo completo',
+                    line: 'Línea',
+                    corners: 'Cuatro esquinas',
+                    letter: 'Letra',
+                    diagonal: 'Diagonal',
+                }[this.config.gameMode] || this.config.gameMode;
+
+            texto += `. Jugando ${modoTexto}`;
+        }
+
+        utterance.text = texto;
+        utterance.lang = 'es-ES';
+        utterance.rate = 1.1; // Velocidad ligeramente rápida
+        utterance.pitch = 1.0;
+        utterance.volume = 0.8;
+
+        window.speechSynthesis.speak(utterance);
+    }
+
     playSound(type) {
         if (!this.config.soundEnabled) return;
 
@@ -1961,6 +2091,18 @@ class BingoApp {
                 gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
                 oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.15);
+            } else if (type === 'notification') {
+                // Sonido de notificación - tono suave y agradable
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.15;
+                oscillator.start();
+
+                setTimeout(() => {
+                    oscillator.frequency.value = 600;
+                }, 80);
+
                 oscillator.stop(audioContext.currentTime + 0.15);
             } else {
                 // Sonido genérico
@@ -2040,6 +2182,7 @@ class BingoApp {
 
     displayChatMessage(message) {
         const chatMessages = document.getElementById('chatMessages');
+        const chatPanel = document.getElementById('chatPanel');
 
         // Remover mensaje vacío si existe
         const emptyState = chatMessages.querySelector('.empty-state');
@@ -2063,6 +2206,72 @@ class BingoApp {
 
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Notificar si el chat está cerrado y el mensaje no es del usuario actual
+        if (message.player !== this.config.playerName) {
+            const chatVisible =
+                chatPanel &&
+                chatPanel.style.display !== 'none' &&
+                window.getComputedStyle(chatPanel).display !== 'none';
+
+            if (!chatVisible || !this.isChatInView()) {
+                this.showChatNotification(message);
+            }
+        }
+    }
+
+    isChatInView() {
+        const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages) return false;
+
+        const rect = chatMessages.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    }
+
+    showChatNotification(message) {
+        // Crear notificación visual
+        const notification = document.createElement('div');
+        notification.className = 'chat-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-comment"></i>
+                <div>
+                    <strong>${message.isHost ? '👑 ' : ''}${message.player}</strong>
+                    <p>${this.escapeHtml(message.text.substring(0, 50))}${
+            message.text.length > 50 ? '...' : ''
+        }</p>
+                </div>
+            </div>
+        `;
+
+        // Agregar al body
+        document.body.appendChild(notification);
+
+        // Click para ir al chat
+        notification.addEventListener('click', () => {
+            const chatPanel = document.getElementById('chatPanel');
+            if (chatPanel) {
+                chatPanel.style.display = 'block';
+                chatPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            notification.remove();
+        });
+
+        // Reproducir sonido de notificación
+        if (this.config.soundEnabled) {
+            this.playSound('notification');
+        }
+
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
     }
 
     addSystemMessage(text) {
