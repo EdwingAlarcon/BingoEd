@@ -572,6 +572,30 @@ class BingoApp {
                         this.multiplayer.nextCardNumber = data.data.nextCardNumber;
                     }
 
+                    // Auto-generar cartones si el jugador aún no los tiene
+                    if (this.gameState.cards.length === 0 && this.config.numCards > 0) {
+                        const assignedCards = [];
+                        for (let i = 0; i < this.config.numCards; i++) {
+                            const cardNumber = this.multiplayer.nextCardNumber++;
+                            this.gameState.cards.push(this.generateBingoCard(cardNumber));
+                            assignedCards.push(cardNumber);
+                        }
+
+                        // Notificar al anfitrión los cartones asignados
+                        if (this.multiplayer.connections.has('host')) {
+                            this.multiplayer.connections.get('host').send({
+                                type: 'cards_assigned',
+                                data: {
+                                    playerId: this.multiplayer.peerId,
+                                    cards: assignedCards,
+                                },
+                            });
+                        }
+
+                        // Renderizar cartones
+                        this.renderBingoCards();
+                    }
+
                     // Actualizar UI
                     if (this.gameState.currentNumber) {
                         this.updateCurrentBall(this.gameState.currentNumber);
