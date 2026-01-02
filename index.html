@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="description"
+            content="BingoEd - Aplicación profesional de bingo virtual con modo multijugador en tiempo real"
+        />
+        <meta name="keywords" content="bingo, juego, multijugador, virtual, online" />
+        <meta name="author" content="BingoEd Team" />
+        <title>BingoEd - Bingo Virtual Profesional</title>
+
+        <!-- Estilos -->
+        <link rel="stylesheet" href="assets/css/styles.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+
+        <!-- Scripts Externos -->
+        <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    </head>
+    <body>
+        <div class="app-container">
+            <!-- Banner Corporativo -->
+            <div id="corporateBanner" class="corporate-banner" style="display: none">
+                <img id="corporateLogo" src="" alt="Logo Empresa" />
+                <span id="corporateName"></span>
+            </div>
+
+            <!-- Header -->
+            <header class="header">
+                <div class="logo">
+                    <i class="fas fa-dice"></i>
+                    <h1>BingoEd</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="connection-status" id="connectionStatus" style="display: none">
+                        <i class="fas fa-circle"></i>
+                        <span id="connectionText">Desconectado</span>
+                        <span id="playersCount" style="display: none"
+                            >• <i class="fas fa-users"></i> 0</span
+                        >
+                    </div>
+                    <button class="btn-icon" id="themeToggle" title="Cambiar tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn-icon" id="soundToggle" title="Sonido">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <button class="btn-primary" id="adminBtn">
+                        <i class="fas fa-cog"></i> Administrador
+                    </button>
+                </div>
+            </header>
+
+            <!-- Modal de Configuración Inicial -->
+            <div id="setupModal" class="modal active">
+                <div class="modal-content">
+                    <h2><i class="fas fa-play-circle"></i> Configurar Juego</h2>
+                    <div class="setup-options">
+                        <div class="option-group">
+                            <label for="gameType">Tipo de Juego:</label>
+                            <select id="gameType">
+                                <option value="solo">Solo / Local</option>
+                                <option value="host">Multijugador - Crear Sala (Anfitrión)</option>
+                                <option value="join">Multijugador - Unirse a Sala</option>
+                            </select>
+                        </div>
+                        <div class="option-group" id="joinCodeGroup" style="display: none">
+                            <label for="joinCode">Código de Sala:</label>
+                            <input
+                                type="text"
+                                id="joinCode"
+                                placeholder="Ingresa el código de sala"
+                                style="text-transform: uppercase"
+                            />
+                            <small style="color: var(--text-secondary)"
+                                >El anfitrión te compartirá este código</small
+                            >
+                        </div>
+                        <div class="option-group">
+                            <label for="playerName">Tu Nombre:</label>
+                            <input
+                                type="text"
+                                id="playerName"
+                                placeholder="Ingresa tu nombre"
+                                value="Jugador 1"
+                            />
+                        </div>
+                        <div class="option-group">
+                            <label for="numCards">Número de Cartones:</label>
+                            <select id="numCards">
+                                <option value="1" selected>1 Cartón</option>
+                                <option value="2">2 Cartones</option>
+                                <option value="3">3 Cartones</option>
+                                <option value="4">4 Cartones</option>
+                                <option value="6">6 Cartones</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label for="gameMode">Modo de Juego:</label>
+                            <select id="gameMode">
+                                <option value="classic">Clásico (Cartón Lleno)</option>
+                                <option value="line">Línea Simple</option>
+                                <option value="corners">4 Esquinas</option>
+                                <option value="pattern">Patrón Especial</option>
+                                <option value="blackout">Apagón Total</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label>
+                                <input type="checkbox" id="autoMark" checked />
+                                Marcar números automáticamente
+                            </label>
+                        </div>
+                        <div class="option-group">
+                            <label for="drawSpeed">Velocidad de Sorteo:</label>
+                            <select id="drawSpeed">
+                                <option value="3000">Lento (3s)</option>
+                                <option value="2000" selected>Normal (2s)</option>
+                                <option value="1000">Rápido (1s)</option>
+                                <option value="500">Muy Rápido (0.5s)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-primary btn-large" id="startGame">
+                        <i class="fas fa-play"></i> Iniciar Juego
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel de Administrador -->
+            <div id="adminModal" class="modal">
+                <div class="modal-content admin-panel">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-user-shield"></i> Panel de Administrador</h2>
+                        <button class="btn-close" id="closeAdmin">&times;</button>
+                    </div>
+                    <div class="admin-tabs">
+                        <button class="tab-btn active" data-tab="room">Sala</button>
+                        <button class="tab-btn" data-tab="prizes">Premios</button>
+                        <button class="tab-btn" data-tab="stats">Estadísticas</button>
+                        <button class="tab-btn" data-tab="settings">Configuración</button>
+                    </div>
+
+                    <div class="tab-content active" id="roomTab">
+                        <h3>Gestión de Sala</h3>
+                        <div class="room-info">
+                            <p><strong>Tipo de Sala:</strong> <span id="roomType">Local</span></p>
+                            <p id="roomCodeDisplay" style="display: none">
+                                <strong>Código de Sala:</strong>
+                                <span id="roomCode" style="font-size: 1.5rem">XXXX-XXXX</span>
+                            </p>
+                            <button class="btn-secondary" id="copyRoomCode" style="display: none">
+                                <i class="fas fa-copy"></i> Copiar Código
+                            </button>
+                            <p
+                                id="hostNote"
+                                style="
+                                    display: none;
+                                    margin-top: 1rem;
+                                    padding: 1rem;
+                                    background: var(--bg-tertiary);
+                                    border-radius: 8px;
+                                "
+                            >
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Eres el anfitrión.</strong> Comparte el código de sala con
+                                otros jugadores para que se unan. Solo tú puedes sortear números.
+                            </p>
+                        </div>
+                        <div class="players-list">
+                            <h4>Jugadores Conectados (<span id="playersCountList">0</span>)</h4>
+                            <ul id="playersList">
+                                <li>Esperando jugadores...</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="prizesTab">
+                        <h3>Configuración de Premios</h3>
+                        <div class="prizes-config">
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem">
+                                <i class="fas fa-info-circle"></i> Configure los premios en pesos
+                                colombianos (COP) o productos personalizados
+                            </p>
+
+                            <div class="prize-item">
+                                <label>Primera Línea:</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center">
+                                    <select id="prize1Type" style="flex: 0 0 120px">
+                                        <option value="money">Dinero</option>
+                                        <option value="product">Producto</option>
+                                    </select>
+                                    <div id="prize1ValueContainer" style="display: flex; flex: 1">
+                                        <input
+                                            type="text"
+                                            id="prize1Value"
+                                            placeholder="Ej: 50000 o Tablet"
+                                            value="50,000"
+                                            style="flex: 1"
+                                        />
+                                    </div>
+                                    <span id="prize1Currency" style="color: var(--text-secondary)"
+                                        >COP</span
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="prize-item">
+                                <label>Segunda Línea:</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center">
+                                    <select id="prize2Type" style="flex: 0 0 120px">
+                                        <option value="money">Dinero</option>
+                                        <option value="product">Producto</option>
+                                    </select>
+                                    <div id="prize2ValueContainer" style="display: flex; flex: 1">
+                                        <input
+                                            type="text"
+                                            id="prize2Value"
+                                            placeholder="Ej: 100000 o Smart TV"
+                                            value="100,000"
+                                            style="flex: 1"
+                                        />
+                                    </div>
+                                    <span id="prize2Currency" style="color: var(--text-secondary)"
+                                        >COP</span
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="prize-item">
+                                <label>Bingo (Cartón Lleno):</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center">
+                                    <select id="prizeBingoType" style="flex: 0 0 120px">
+                                        <option value="money">Dinero</option>
+                                        <option value="product">Producto</option>
+                                    </select>
+                                    <div
+                                        id="prizeBingoValueContainer"
+                                        style="display: flex; flex: 1"
+                                    >
+                                        <input
+                                            type="text"
+                                            id="prizeBingoValue"
+                                            placeholder="Ej: 300000 o Viaje"
+                                            value="300,000"
+                                            style="flex: 1"
+                                        />
+                                    </div>
+                                    <span
+                                        id="prizeBingoCurrency"
+                                        style="color: var(--text-secondary)"
+                                        >COP</span
+                                    >
+                                </div>
+                            </div>
+
+                            <button class="btn-primary" id="savePrizes" style="margin-top: 1rem">
+                                <i class="fas fa-save"></i> Guardar Premios
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="statsTab">
+                        <h3>Estadísticas del Juego</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <i class="fas fa-gamepad"></i>
+                                <h4>Partidas Jugadas</h4>
+                                <p class="stat-value" id="gamesPlayed">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-trophy"></i>
+                                <h4>Bingos Ganados</h4>
+                                <p class="stat-value" id="bingosWon">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-chart-line"></i>
+                                <h4>Número Más Frecuente</h4>
+                                <p class="stat-value" id="mostFrequent">-</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-clock"></i>
+                                <h4>Tiempo Promedio</h4>
+                                <p class="stat-value" id="avgTime">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="settingsTab">
+                        <h3>Configuración Avanzada</h3>
+                        <div class="settings-list">
+                            <div class="setting-item">
+                                <label>Tema de Color:</label>
+                                <select id="colorTheme">
+                                    <option value="default">Predeterminado</option>
+                                    <option value="ocean">Océano</option>
+                                    <option value="sunset">Atardecer</option>
+                                    <option value="forest">Bosque</option>
+                                    <option value="corporate">Corporativo</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" id="showAnimations" checked />
+                                    Mostrar Animaciones
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" id="enableChat" />
+                                    Habilitar Chat (Empresarial)
+                                </label>
+                                <small
+                                    style="
+                                        color: var(--text-secondary);
+                                        display: block;
+                                        margin-top: 0.3rem;
+                                    "
+                                >
+                                    Permite comunicación entre jugadores en modo multijugador
+                                </small>
+                            </div>
+
+                            <hr
+                                style="
+                                    margin: 1.5rem 0;
+                                    border: none;
+                                    border-top: 1px solid var(--border-color);
+                                "
+                            />
+
+                            <h4 style="margin-bottom: 1rem">
+                                <i class="fas fa-building"></i> Personalización Corporativa
+                            </h4>
+
+                            <div class="setting-item">
+                                <label>Nombre de la Empresa:</label>
+                                <input
+                                    type="text"
+                                    id="companyName"
+                                    placeholder="Ej: Mi Empresa S.A.S."
+                                    maxlength="100"
+                                    style="
+                                        width: 100%;
+                                        padding: 0.5rem;
+                                        border-radius: 4px;
+                                        border: 1px solid var(--border-color);
+                                    "
+                                />
+                                <small
+                                    style="
+                                        color: var(--text-secondary);
+                                        display: block;
+                                        margin-top: 0.3rem;
+                                    "
+                                >
+                                    Puedes usar espacios y cualquier caracter especial
+                                </small>
+                            </div>
+
+                            <div class="setting-item">
+                                <label>Logo de la Empresa:</label>
+                                <input
+                                    type="file"
+                                    id="companyLogo"
+                                    accept="image/*"
+                                    style="width: 100%"
+                                />
+                                <small
+                                    style="
+                                        color: var(--text-secondary);
+                                        display: block;
+                                        margin-top: 0.3rem;
+                                    "
+                                >
+                                    Formatos: JPG, PNG, SVG (máx. 2MB)
+                                </small>
+                                <div id="logoPreview" style="margin-top: 1rem; display: none">
+                                    <img
+                                        id="logoPreviewImg"
+                                        src=""
+                                        alt="Preview"
+                                        style="
+                                            max-width: 200px;
+                                            max-height: 80px;
+                                            border-radius: 4px;
+                                            border: 1px solid var(--border-color);
+                                        "
+                                    />
+                                    <button
+                                        class="btn-danger"
+                                        id="removeLogo"
+                                        style="
+                                            margin-top: 0.5rem;
+                                            padding: 0.3rem 0.8rem;
+                                            font-size: 0.85rem;
+                                        "
+                                    >
+                                        <i class="fas fa-trash"></i> Quitar Logo
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="setting-item">
+                                <button class="btn-primary" id="saveCorporateSettings">
+                                    <i class="fas fa-save"></i> Guardar Configuración Corporativa
+                                </button>
+                            </div>
+
+                            <hr
+                                style="
+                                    margin: 1.5rem 0;
+                                    border: none;
+                                    border-top: 1px solid var(--border-color);
+                                "
+                            />
+
+                            <div class="setting-item">
+                                <button class="btn-danger" id="resetStats">
+                                    Resetear Estadísticas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Game Area -->
+            <main class="main-content">
+                <!-- Sidebar Izquierdo - Números Sorteados -->
+                <aside class="sidebar-left">
+                    <div class="called-numbers-section">
+                        <h3><i class="fas fa-list-ol"></i> Números Llamados</h3>
+                        <div class="current-ball" id="currentBall">
+                            <div class="ball-display">
+                                <span id="currentNumber">-</span>
+                            </div>
+                            <p class="ball-label">Último Número</p>
+                        </div>
+                        <div class="numbers-grid" id="numbersGrid">
+                            <!-- Numbers 1-75 will be generated here -->
+                        </div>
+                        <div class="game-stats">
+                            <p>
+                                <i class="fas fa-hashtag"></i> Llamados:
+                                <span id="calledCount">0</span>/75
+                            </p>
+                            <p>
+                                <i class="fas fa-clock"></i> Tiempo:
+                                <span id="gameTime">00:00</span>
+                            </p>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Centro - Cartones de Bingo -->
+                <section class="bingo-cards-container">
+                    <div class="game-controls">
+                        <button class="btn-success btn-large" id="drawBall">
+                            <i class="fas fa-play"></i> Sortear Número
+                        </button>
+                        <button class="btn-secondary" id="autoDraw">
+                            <i class="fas fa-sync"></i> Auto Sorteo
+                        </button>
+                        <button class="btn-warning" id="pauseGame" style="display: none">
+                            <i class="fas fa-pause"></i> Pausar
+                        </button>
+                        <button class="btn-info" id="newGame">
+                            <i class="fas fa-redo"></i> Nuevo Juego
+                        </button>
+                    </div>
+
+                    <div class="cards-grid" id="cardsGrid">
+                        <!-- Bingo cards will be generated here -->
+                    </div>
+
+                    <div class="pattern-info" id="patternInfo">
+                        <i class="fas fa-bullseye"></i> <strong>Objetivo:</strong>
+                        <span id="objectiveText">Completa el cartón completo</span>
+                    </div>
+                </section>
+
+                <!-- Sidebar Derecho - Información y Chat -->
+                <aside class="sidebar-right">
+                    <div class="info-panel">
+                        <h3><i class="fas fa-trophy"></i> Premios</h3>
+                        <div class="prizes-list">
+                            <div class="prize-box">
+                                <i class="fas fa-medal"></i>
+                                <span>1ª Línea</span>
+                                <strong>$50,000 COP</strong>
+                            </div>
+                            <div class="prize-box">
+                                <i class="fas fa-award"></i>
+                                <span>2ª Línea</span>
+                                <strong>$100,000 COP</strong>
+                            </div>
+                            <div class="prize-box highlight">
+                                <i class="fas fa-crown"></i>
+                                <span>Bingo</span>
+                                <strong>$300,000 COP</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recent-winners">
+                        <h3><i class="fas fa-star"></i> Ganadores Recientes</h3>
+                        <div class="winners-list" id="winnersList">
+                            <p class="empty-state">Aún no hay ganadores</p>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <h3><i class="fas fa-bolt"></i> Acciones Rápidas</h3>
+                        <button class="btn-action" id="checkBingo">
+                            <i class="fas fa-check-circle"></i> Verificar Bingo
+                        </button>
+                        <button class="btn-action" id="printCards">
+                            <i class="fas fa-print"></i> Imprimir Cartones
+                        </button>
+                        <button class="btn-action" id="shareGame">
+                            <i class="fas fa-share-alt"></i> Compartir Sala
+                        </button>
+                    </div>
+
+                    <!-- Chat Empresarial -->
+                    <div class="chat-panel" id="chatPanel" style="display: none">
+                        <h3><i class="fas fa-comments"></i> Chat</h3>
+                        <div class="chat-messages" id="chatMessages">
+                            <p class="empty-state">No hay mensajes aún</p>
+                        </div>
+                        <div class="chat-input">
+                            <input
+                                type="text"
+                                id="chatInput"
+                                placeholder="Escribe un mensaje..."
+                                maxlength="200"
+                            />
+                            <button class="btn-primary" id="sendMessage">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+            </main>
+
+            <!-- Winner Modal -->
+            <div id="winnerModal" class="modal">
+                <div class="modal-content winner-announcement">
+                    <div class="confetti"></div>
+                    <i class="fas fa-trophy trophy-icon"></i>
+                    <h2>¡BINGO!</h2>
+                    <p class="winner-name" id="winnerName"></p>
+                    <p class="winner-details" id="winnerDetails"></p>
+                    <button class="btn-primary btn-large" id="continueGame">Continuar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scripts -->
+        <script src="assets/js/app.js"></script>
+    </body>
+</html>

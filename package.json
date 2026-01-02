@@ -1,0 +1,39 @@
+{
+  "name": "bingoed",
+  "version": "1.0.0",
+  "description": "Aplicación web profesional de bingo virtual con modo multijugador en tiempo real",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Abre index.html en tu navegador' && start index.html",
+    "dev": "echo 'Usa Live Server o similar para desarrollo'",
+    "test": "echo 'Tests no configurados aún'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/usuario/bingoed.git"
+  },
+  "keywords": [
+    "bingo",
+    "game",
+    "multiplayer",
+    "p2p",
+    "webrtc",
+    "javascript",
+    "html5",
+    "css3"
+  ],
+  "author": "BingoEd Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/usuario/bingoed/issues"
+  },
+  "homepage": "https://github.com/usuario/bingoed#readme",
+  "devDependencies": {
+    "eslint": "^9.39.2"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
