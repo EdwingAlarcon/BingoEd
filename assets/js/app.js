@@ -90,6 +90,7 @@ class BingoApp {
             currentNumber: null,
             cards: [],
             winners: [],
+            hasWinner: false,
             startTime: null,
             gameTime: 0,
             timerInterval: null,
@@ -625,6 +626,18 @@ class BingoApp {
                 break;
 
             case 'winner_announced':
+                // Marcar que ya hay un ganador
+                this.gameState.hasWinner = true;
+
+                // Agregar el ganador a la lista si no es el propio
+                if (
+                    !this.gameState.winners.find(
+                        w => w.cardId === data.data.cardId && w.playerName === data.data.playerName
+                    )
+                ) {
+                    this.gameState.winners.push(data.data);
+                }
+
                 // Mostrar ganador en TODOS los clientes (incluyendo el ganador)
                 this.showWinnerModal(data.data);
                 this.addToWinnersList(data.data);
@@ -1055,6 +1068,11 @@ class BingoApp {
 
     // ===== VALIDACIÓN DE PREMIOS =====
     checkWin(card) {
+        // Si ya hay un ganador, no verificar más
+        if (this.gameState.hasWinner) {
+            return;
+        }
+
         const mode = this.config.gameMode;
         let won = false;
         let winType = '';
@@ -1129,6 +1147,14 @@ class BingoApp {
     }
 
     declareWinner(card, winType) {
+        // Verificar nuevamente que no haya ganador (por race conditions)
+        if (this.gameState.hasWinner) {
+            return;
+        }
+
+        // Marcar que ya hay un ganador
+        this.gameState.hasWinner = true;
+
         const winner = {
             cardId: card.id,
             playerName: this.config.playerName,
@@ -1427,6 +1453,7 @@ class BingoApp {
         this.gameState.calledNumbers = [];
         this.gameState.currentNumber = null;
         this.gameState.winners = [];
+        this.gameState.hasWinner = false;
         this.gameState.startTime = Date.now();
 
         // Render
