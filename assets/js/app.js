@@ -128,6 +128,8 @@ class BingoApp {
         this.corporate = {
             enabled: false,
             companyName: '',
+            nit: '',
+            address: '',
             logoUrl: '',
         };
 
@@ -548,10 +550,20 @@ class BingoApp {
                             }
                         }
 
-                        // Actualizar el input del nombre de la empresa
+                        // Actualizar los inputs de configuración corporativa
                         const companyNameInput = document.getElementById('companyName');
                         if (companyNameInput && this.corporate.companyName) {
                             companyNameInput.value = this.corporate.companyName;
+                        }
+
+                        const companyNitInput = document.getElementById('companyNit');
+                        if (companyNitInput && this.corporate.nit) {
+                            companyNitInput.value = this.corporate.nit;
+                        }
+
+                        const companyAddressInput = document.getElementById('companyAddress');
+                        if (companyAddressInput && this.corporate.address) {
+                            companyAddressInput.value = this.corporate.address;
                         }
                     }
 
@@ -2048,11 +2060,15 @@ class BingoApp {
 
     saveCorporateSettings() {
         const companyName = document.getElementById('companyName').value.trim();
+        const companyNit = document.getElementById('companyNit').value.trim();
+        const companyAddress = document.getElementById('companyAddress').value.trim();
 
         // Configuración es completamente opcional
         this.corporate.companyName = companyName;
+        this.corporate.nit = companyNit;
+        this.corporate.address = companyAddress;
 
-        if (companyName || this.corporate.logoUrl) {
+        if (companyName || companyNit || companyAddress || this.corporate.logoUrl) {
             this.corporate.enabled = true;
             localStorage.setItem('corporateSettings', JSON.stringify(this.corporate));
             this.updateCorporateBanner();
@@ -2101,6 +2117,16 @@ class BingoApp {
                 companyNameInput.value = this.corporate.companyName;
             }
 
+            const companyNitInput = document.getElementById('companyNit');
+            if (companyNitInput && this.corporate.nit) {
+                companyNitInput.value = this.corporate.nit;
+            }
+
+            const companyAddressInput = document.getElementById('companyAddress');
+            if (companyAddressInput && this.corporate.address) {
+                companyAddressInput.value = this.corporate.address;
+            }
+
             if (this.corporate.logoUrl) {
                 const preview = document.getElementById('logoPreview');
                 const previewImg = document.getElementById('logoPreviewImg');
@@ -2116,6 +2142,8 @@ class BingoApp {
         const banner = document.getElementById('corporateBanner');
         const logo = document.getElementById('corporateLogo');
         const name = document.getElementById('corporateName');
+        const nit = document.getElementById('corporateNit');
+        const address = document.getElementById('corporateAddress');
 
         if (this.corporate.enabled && (this.corporate.logoUrl || this.corporate.companyName)) {
             banner.style.display = 'flex';
@@ -2132,6 +2160,20 @@ class BingoApp {
                 name.style.display = 'block';
             } else {
                 name.style.display = 'none';
+            }
+
+            if (this.corporate.nit) {
+                nit.textContent = `NIT: ${this.corporate.nit}`;
+                nit.style.display = 'block';
+            } else {
+                nit.style.display = 'none';
+            }
+
+            if (this.corporate.address) {
+                address.textContent = this.corporate.address;
+                address.style.display = 'block';
+            } else {
+                address.style.display = 'none';
             }
         } else {
             banner.style.display = 'none';

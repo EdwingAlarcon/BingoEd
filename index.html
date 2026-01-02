@@ -26,7 +26,11 @@
             <!-- Banner Corporativo -->
             <div id="corporateBanner" class="corporate-banner" style="display: none">
                 <img id="corporateLogo" src="" alt="Logo Empresa" />
-                <span id="corporateName"></span>
+                <div class="corporate-info">
+                    <span id="corporateName" class="corporate-name"></span>
+                    <small id="corporateNit" class="corporate-nit"></small>
+                    <small id="corporateAddress" class="corporate-address"></small>
+                </div>
             </div>
 
             <!-- Header -->
@@ -351,15 +355,38 @@
                                         border: 1px solid var(--border-color);
                                     "
                                 />
-                                <small
+                            </div>
+
+                            <div class="setting-item">
+                                <label>NIT / RUC / Registro:</label>
+                                <input
+                                    type="text"
+                                    id="companyNit"
+                                    placeholder="Ej: 900.123.456-7"
+                                    maxlength="50"
                                     style="
-                                        color: var(--text-secondary);
-                                        display: block;
-                                        margin-top: 0.3rem;
+                                        width: 100%;
+                                        padding: 0.5rem;
+                                        border-radius: 4px;
+                                        border: 1px solid var(--border-color);
                                     "
-                                >
-                                    Puedes usar espacios y cualquier caracter especial
-                                </small>
+                                />
+                            </div>
+
+                            <div class="setting-item">
+                                <label>Dirección / Teléfono:</label>
+                                <input
+                                    type="text"
+                                    id="companyAddress"
+                                    placeholder="Ej: Calle 123 #45-67, Tel: 300 1234567"
+                                    maxlength="150"
+                                    style="
+                                        width: 100%;
+                                        padding: 0.5rem;
+                                        border-radius: 4px;
+                                        border: 1px solid var(--border-color);
+                                    "
+                                />
                             </div>
 
                             <div class="setting-item">

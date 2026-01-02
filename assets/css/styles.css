@@ -1211,6 +1211,26 @@ body {
     border-radius: var(--border-radius-sm);
 }
 
+.corporate-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.corporate-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.corporate-nit,
+.corporate-address {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+}
+
 .corporate-banner span {
     font-size: 1.8rem;
     font-weight: 700;
@@ -1349,9 +1369,32 @@ body {
     .sidebar-right,
     .game-controls,
     .modal,
-    .corporate-banner,
     .chat-panel {
         display: none !important;
+    }
+
+    /* Mostrar banner corporativo en impresión */
+    .corporate-banner {
+        display: flex !important;
+        background: white !important;
+        border: 2px solid #000;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        page-break-after: avoid;
+    }
+
+    .corporate-banner img {
+        border: 1px solid #ccc;
+    }
+
+    .corporate-name {
+        color: #000 !important;
+        text-shadow: none !important;
+    }
+
+    .corporate-nit,
+    .corporate-address {
+        color: #333 !important;
     }
 
     .main-content {
