@@ -705,31 +705,53 @@ class BingoApp {
         }
 
         if (count === 0) {
-            playersList.innerHTML = '<li>Esperando jugadores...</li>';
+            playersList.innerHTML =
+                '<li style="color: var(--text-secondary);"><i class="fas fa-clock"></i> Esperando jugadores...</li>';
         } else {
             playersList.innerHTML = '';
             this.multiplayer.players.forEach(player => {
                 const li = document.createElement('li');
+                li.style.cssText =
+                    'padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bg-tertiary); border-radius: var(--border-radius-sm); border-left: 3px solid var(--primary-color);';
 
-                // Mostrar información de cartones si están disponibles
+                // Icono y nombre
+                const playerIcon = player.isHost ? 'fa-crown' : 'fa-user';
+                const playerName = `<strong>${player.name}</strong>`;
+                const hostBadge = player.isHost
+                    ? '<span style="background: var(--accent-color); color: white; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem;">ANFITRIÓN</span>'
+                    : '';
+
+                // Información de cartones
                 let cartonesInfo = '';
                 if (player.cards && player.cards.length > 0) {
-                    const cartonesNumeros = player.cards.map(c => `#${c}`).join(', ');
-                    cartonesInfo = `<br><small style="color: var(--text-secondary); margin-left: 1.5rem;">Cartones: ${cartonesNumeros}</small>`;
+                    const cartonesHTML = player.cards
+                        .map(
+                            c =>
+                                `<span style="background: var(--success-color); color: white; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">#${c}</span>`
+                        )
+                        .join(' ');
+                    cartonesInfo = `<div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fas fa-ticket-alt" style="color: var(--primary-color); font-size: 0.9rem;"></i>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Cartones:</span>
+                        ${cartonesHTML}
+                    </div>`;
                 } else if (player.numCards) {
-                    cartonesInfo = `<br><small style="color: var(--text-secondary); margin-left: 1.5rem;">${
-                        player.numCards
-                    } cartón${player.numCards > 1 ? 'es' : ''}</small>`;
+                    cartonesInfo = `<div style="margin-top: 0.5rem;">
+                        <i class="fas fa-ticket-alt" style="color: var(--text-secondary); font-size: 0.85rem;"></i>
+                        <small style="color: var(--text-secondary);"> ${player.numCards} cartón${
+                        player.numCards > 1 ? 'es' : ''
+                    } (sin asignar)</small>
+                    </div>`;
                 }
 
                 li.innerHTML = `
-                    <i class="fas ${player.isHost ? 'fa-crown' : 'fa-user'}"></i>
-                    ${player.name}
-                    ${
-                        player.isHost
-                            ? ' <span style="color: var(--accent-color);">(Anfitrión)</span>'
-                            : ''
-                    }
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas ${playerIcon}" style="color: ${
+                    player.isHost ? 'var(--accent-color)' : 'var(--primary-color)'
+                }; margin-right: 0.5rem;"></i>
+                        ${playerName}
+                        ${hostBadge}
+                    </div>
                     ${cartonesInfo}
                 `;
                 playersList.appendChild(li);
