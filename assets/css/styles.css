@@ -57,8 +57,8 @@ body.dark-theme {
     --bg-tertiary: #334155;
     --bg-card: #1e293b;
     --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-light: #94a3b8;
+    --text-secondary: #e2e8f0;
+    --text-light: #cbd5e1;
 }
 
 /* Temas de Color */
@@ -211,6 +211,11 @@ body {
 #playersCount {
     color: var(--text-secondary);
     font-size: 0.85rem;
+}
+
+body.dark-theme #playersCount {
+    color: var(--text-primary);
+    opacity: 0.9;
 }
 
 /* ===== BOTONES ===== */
@@ -542,6 +547,10 @@ body.dark-theme .tab-btn:not(.active):hover {
 .room-info p {
     font-size: 1.1rem;
     margin-bottom: 1rem;
+}
+
+body.dark-theme .room-info p {
+    color: var(--text-primary);
 }
 
 #roomCode {
@@ -1221,6 +1230,11 @@ body.dark-theme .bingo-cell {
     margin-bottom: 1rem;
 }
 
+body.dark-theme .mode-description {
+    color: var(--text-primary);
+    opacity: 0.95;
+}
+
 .bingo-pattern-preview {
     background: var(--bg-tertiary);
     border-radius: var(--border-radius);
@@ -1248,6 +1262,12 @@ body.dark-theme .bingo-cell {
     font-weight: 600;
     color: var(--text-secondary);
     transition: all 0.3s ease;
+}
+
+body.dark-theme .pattern-cell {
+    background: #334155;
+    border-color: #475569;
+    color: var(--text-primary);
 }
 
 .pattern-cell.active {

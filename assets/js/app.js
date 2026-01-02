@@ -396,6 +396,7 @@ class BingoApp {
                 });
 
                 this.updateConnectionUI('connected');
+                this.updateAdminPermissions(); // Restringir acceso para invitado
             });
 
             conn.on('data', data => {
