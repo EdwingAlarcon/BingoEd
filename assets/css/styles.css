@@ -949,6 +949,7 @@ body {
     align-items: center;
     gap: 1rem;
     transition: var(--transition);
+    position: relative;
 }
 
 .prize-box:hover {
@@ -958,6 +959,43 @@ body {
 .prize-box.highlight {
     background: linear-gradient(135deg, var(--accent-color), #f59e0b);
     color: white;
+}
+
+/* Premio ya entregado - tachado */
+.prize-box.awarded {
+    opacity: 0.5;
+    background: var(--bg-secondary);
+    position: relative;
+}
+
+.prize-box.awarded::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #ef4444;
+    transform: translateY(-50%) rotate(-5deg);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.prize-box.awarded::after {
+    content: '✓ ENTREGADO';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.prize-box.awarded:hover {
+    transform: none;
 }
 
 .prize-box i {

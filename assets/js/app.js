@@ -91,6 +91,7 @@ class BingoApp {
             cards: [],
             winners: [],
             hasWinner: false,
+            awardedPrizes: [], // Premios ya entregados: ['firstLine', 'secondLine', 'bingo']
             startTime: null,
             gameTime: 0,
             timerInterval: null,
@@ -699,6 +700,15 @@ class BingoApp {
                 // Marcar que ya hay un ganador
                 this.gameState.hasWinner = true;
 
+                // Marcar el premio como entregado
+                if (
+                    data.data.awardedPrize &&
+                    !this.gameState.awardedPrizes.includes(data.data.awardedPrize)
+                ) {
+                    this.gameState.awardedPrizes.push(data.data.awardedPrize);
+                    this.updatePrizesDisplay();
+                }
+
                 // Agregar el ganador a la lista si no es el propio
                 if (
                     !this.gameState.winners.find(
@@ -755,6 +765,41 @@ class BingoApp {
                 }
                 break;
 
+            case 'theme_sync':
+                // Sincronizar tema visual del anfitrión
+                if (!this.multiplayer.isHost) {
+                    // Aplicar tema oscuro/claro
+                    if (data.data.darkTheme !== this.config.darkTheme) {
+                        this.config.darkTheme = data.data.darkTheme;
+                        if (data.data.darkTheme) {
+                            document.body.classList.add('dark-theme');
+                            const icon = document.querySelector('#themeToggle i');
+                            if (icon) icon.className = 'fas fa-sun';
+                        } else {
+                            document.body.classList.remove('dark-theme');
+                            const icon = document.querySelector('#themeToggle i');
+                            if (icon) icon.className = 'fas fa-moon';
+                        }
+                    }
+
+                    // Aplicar tema de color
+                    if (data.data.colorTheme !== this.config.colorTheme) {
+                        document.body.classList.remove(
+                            'theme-ocean',
+                            'theme-sunset',
+                            'theme-forest',
+                            'theme-corporate'
+                        );
+                        if (data.data.colorTheme !== 'default') {
+                            document.body.classList.add(`theme-${data.data.colorTheme}`);
+                        }
+                        this.config.colorTheme = data.data.colorTheme;
+                    }
+
+                    this.addSystemMessage('Tema visual sincronizado con el anfitrión');
+                }
+                break;
+
             case 'cards_assigned':
                 // Recibir información de cartones asignados (solo anfitrión)
                 if (this.multiplayer.isHost && data.data.playerId) {
@@ -778,6 +823,54 @@ class BingoApp {
                             data: Array.from(this.multiplayer.players.values()),
                         });
                     }
+                }
+                break;
+
+            case 'new_game_started':
+                // Recibir notificación de nuevo juego iniciado por el anfitrión
+                if (!this.multiplayer.isHost) {
+                    // Resetear estado del juego
+                    this.gameState.isPlaying = true;
+                    this.gameState.calledNumbers = [];
+                    this.gameState.currentNumber = null;
+                    this.gameState.winners = [];
+                    this.gameState.hasWinner = false;
+                    this.gameState.awardedPrizes = [];
+                    this.gameState.startTime = Date.now();
+
+                    // Actualizar configuración
+                    this.config.gameMode = data.data.gameMode;
+                    this.config.drawSpeed = data.data.drawSpeed;
+                    this.multiplayer.nextCardNumber = data.data.nextCardNumber;
+
+                    // Generar nuevos cartones
+                    this.gameState.cards = [];
+                    const assignedCards = [];
+                    for (let i = 0; i < this.config.numCards; i++) {
+                        const cardNumber = this.multiplayer.nextCardNumber++;
+                        this.gameState.cards.push(this.generateBingoCard(cardNumber));
+                        assignedCards.push(cardNumber);
+                    }
+
+                    // Notificar al anfitrión los nuevos cartones
+                    if (this.multiplayer.connections.has('host')) {
+                        this.multiplayer.connections.get('host').send({
+                            type: 'cards_assigned',
+                            data: {
+                                playerId: this.multiplayer.peerId,
+                                cards: assignedCards,
+                            },
+                        });
+                    }
+
+                    // Renderizar
+                    this.renderCards();
+                    this.updateObjectiveText();
+                    this.startTimer();
+                    this.updatePrizesDisplay();
+
+                    // Mostrar notificación
+                    this.addSystemMessage('El anfitrión ha iniciado un nuevo juego');
                 }
                 break;
         }
@@ -1222,6 +1315,19 @@ class BingoApp {
         return corners.every(i => card.marked[i]);
     }
 
+    getPrizeType(winType) {
+        const mapping = {
+            'Primera Línea': 'firstLine',
+            'Segunda Línea': 'secondLine',
+            Bingo: 'bingo',
+            'Cartón Completo': 'bingo',
+            'Apagón Total': 'bingo',
+            Línea: 'firstLine',
+            '4 Esquinas': 'firstLine',
+        };
+        return mapping[winType] || null;
+    }
+
     declareWinner(card, winType) {
         // Verificar nuevamente que no haya ganador (por race conditions)
         if (this.gameState.hasWinner) {
@@ -1242,6 +1348,13 @@ class BingoApp {
         this.gameState.winners.push(winner);
         this.stats.bingosWon++;
         this.saveStats();
+
+        // Marcar el premio como entregado
+        const prizeType = this.getPrizeType(winType);
+        if (prizeType && !this.gameState.awardedPrizes.includes(prizeType)) {
+            this.gameState.awardedPrizes.push(prizeType);
+            this.updatePrizesDisplay();
+        }
 
         // Detener auto-sorteo automáticamente cuando hay ganador
         if (this.gameState.autoPlay) {
@@ -1269,7 +1382,10 @@ class BingoApp {
         if (this.multiplayer.enabled) {
             const message = {
                 type: 'winner_announced',
-                data: winner,
+                data: {
+                    ...winner,
+                    awardedPrize: prizeType, // Incluir el tipo de premio entregado
+                },
             };
 
             if (this.multiplayer.isHost) {
@@ -1530,7 +1646,20 @@ class BingoApp {
         this.gameState.currentNumber = null;
         this.gameState.winners = [];
         this.gameState.hasWinner = false;
+        this.gameState.awardedPrizes = []; // Resetear premios entregados
         this.gameState.startTime = Date.now();
+
+        // Si es anfitrión, notificar a todos que hay un nuevo juego
+        if (this.multiplayer.enabled && this.multiplayer.isHost) {
+            this.broadcastToPlayers({
+                type: 'new_game_started',
+                data: {
+                    gameMode: this.config.gameMode,
+                    drawSpeed: this.config.drawSpeed,
+                    nextCardNumber: this.multiplayer.nextCardNumber,
+                },
+            });
+        }
 
         // Render
         this.renderCards();
@@ -1538,6 +1667,7 @@ class BingoApp {
         this.startTimer();
         this.updateRoomUI();
         this.updatePlayersUI();
+        this.updatePrizesDisplay();
 
         // Actualizar estadísticas
         this.stats.gamesPlayed++;
@@ -1989,6 +2119,17 @@ class BingoApp {
         icon.className = this.config.darkTheme ? 'fas fa-sun' : 'fas fa-moon';
 
         localStorage.setItem('darkTheme', this.config.darkTheme);
+
+        // Sincronizar tema con jugadores si es anfitrión
+        if (this.multiplayer.enabled && this.multiplayer.isHost) {
+            this.broadcastToPlayers({
+                type: 'theme_sync',
+                data: {
+                    darkTheme: this.config.darkTheme,
+                    colorTheme: this.config.colorTheme,
+                },
+            });
+        }
     }
 
     changeColorTheme(theme) {
@@ -2006,6 +2147,17 @@ class BingoApp {
 
         this.config.colorTheme = theme;
         localStorage.setItem('colorTheme', theme);
+
+        // Sincronizar tema con jugadores si es anfitrión
+        if (this.multiplayer.enabled && this.multiplayer.isHost) {
+            this.broadcastToPlayers({
+                type: 'theme_sync',
+                data: {
+                    darkTheme: this.config.darkTheme,
+                    colorTheme: this.config.colorTheme,
+                },
+            });
+        }
     }
 
     loadTheme() {
@@ -2215,17 +2367,47 @@ class BingoApp {
 
     updatePrizesDisplay() {
         // Actualizar los premios mostrados en el sidebar derecho del juego
-        const prizeBoxes = document.querySelectorAll('.prizes-list .prize-box strong');
+        const prizeBoxes = document.querySelectorAll('.prizes-list .prize-box');
 
         if (prizeBoxes.length >= 3) {
             // Primera línea
-            prizeBoxes[0].textContent = this.prizes.firstLine.description || '$50,000 COP';
+            const firstLineBox = prizeBoxes[0];
+            const firstLineText = firstLineBox.querySelector('strong');
+            if (firstLineText) {
+                firstLineText.textContent = this.prizes.firstLine.description || '$50,000 COP';
+            }
+            // Marcar como entregado si ya se ganó
+            if (this.gameState.awardedPrizes.includes('firstLine')) {
+                firstLineBox.classList.add('awarded');
+            } else {
+                firstLineBox.classList.remove('awarded');
+            }
 
             // Segunda línea
-            prizeBoxes[1].textContent = this.prizes.secondLine.description || '$100,000 COP';
+            const secondLineBox = prizeBoxes[1];
+            const secondLineText = secondLineBox.querySelector('strong');
+            if (secondLineText) {
+                secondLineText.textContent = this.prizes.secondLine.description || '$100,000 COP';
+            }
+            // Marcar como entregado si ya se ganó
+            if (this.gameState.awardedPrizes.includes('secondLine')) {
+                secondLineBox.classList.add('awarded');
+            } else {
+                secondLineBox.classList.remove('awarded');
+            }
 
             // Bingo
-            prizeBoxes[2].textContent = this.prizes.bingo.description || '$300,000 COP';
+            const bingoBox = prizeBoxes[2];
+            const bingoText = bingoBox.querySelector('strong');
+            if (bingoText) {
+                bingoText.textContent = this.prizes.bingo.description || '$300,000 COP';
+            }
+            // Marcar como entregado si ya se ganó
+            if (this.gameState.awardedPrizes.includes('bingo')) {
+                bingoBox.classList.add('awarded');
+            } else {
+                bingoBox.classList.remove('awarded');
+            }
         }
     }
 
