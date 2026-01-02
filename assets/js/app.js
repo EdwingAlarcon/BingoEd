@@ -586,11 +586,26 @@ class BingoApp {
                     this.gameState.calledNumbers = data.data.calledNumbers || [];
                     this.gameState.currentNumber = data.data.currentNumber;
                     this.gameState.isPlaying = data.data.isPlaying;
-                    this.config.gameMode = data.data.gameMode;
+
+                    // Sincronizar modo de juego
+                    if (data.data.gameMode) {
+                        this.config.gameMode = data.data.gameMode;
+                        const gameModeSelect = document.getElementById('gameMode');
+                        if (gameModeSelect) {
+                            gameModeSelect.value = data.data.gameMode;
+                        }
+                        this.updateObjectiveText();
+                        this.updateGameModeDisplay();
+                        console.log(`Modo de juego sincronizado: ${this.config.gameMode}`);
+                    }
 
                     // Sincronizar velocidad del anfitrión
                     if (data.data.drawSpeed) {
                         this.config.drawSpeed = data.data.drawSpeed;
+                        const drawSpeedSelect = document.getElementById('drawSpeed');
+                        if (drawSpeedSelect) {
+                            drawSpeedSelect.value = data.data.drawSpeed.toString();
+                        }
                         console.log(
                             `Velocidad sincronizada con el anfitrión: ${this.config.drawSpeed}ms`
                         );
@@ -886,10 +901,24 @@ class BingoApp {
                     this.gameState.awardedPrizes = [];
                     this.gameState.startTime = Date.now();
 
-                    // Actualizar configuración
+                    // Actualizar configuración y sincronizar con UI
                     this.config.gameMode = data.data.gameMode;
                     this.config.drawSpeed = data.data.drawSpeed;
                     this.multiplayer.nextCardNumber = data.data.nextCardNumber;
+
+                    // Actualizar selectores de UI
+                    const gameModeSelect = document.getElementById('gameMode');
+                    if (gameModeSelect) {
+                        gameModeSelect.value = data.data.gameMode;
+                    }
+                    const drawSpeedSelect = document.getElementById('drawSpeed');
+                    if (drawSpeedSelect) {
+                        drawSpeedSelect.value = data.data.drawSpeed.toString();
+                    }
+
+                    // Actualizar objetivos y display
+                    this.updateObjectiveText();
+                    this.updateGameModeDisplay();
 
                     // Generar nuevos cartones
                     this.gameState.cards = [];
