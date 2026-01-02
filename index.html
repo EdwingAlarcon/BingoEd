@@ -531,6 +531,29 @@
 
                 <!-- Sidebar Derecho - Información y Chat -->
                 <aside class="sidebar-right">
+                    <!-- Modo de Juego Actual -->
+                    <div class="info-panel" id="currentGameModePanel" style="display: none">
+                        <h3><i class="fas fa-gamepad"></i> Modo de Juego</h3>
+                        <div class="game-mode-display">
+                            <div class="mode-title" id="currentModeTitle">Clásico</div>
+                            <div class="mode-description" id="currentModeDescription">
+                                Completa todo el cartón
+                            </div>
+                            <div class="mode-visual" id="currentModeVisual">
+                                <!-- Representación visual del cartón 5x5 -->
+                                <div class="bingo-pattern-preview">
+                                    <div class="pattern-grid" id="patternGrid">
+                                        <!-- Se generará dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mode-instruction" id="currentModeInstruction">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Marca todos los números del cartón</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="info-panel">
                         <h3><i class="fas fa-trophy"></i> Premios</h3>
                         <div class="prizes-list">

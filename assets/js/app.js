@@ -1697,6 +1697,101 @@ class BingoApp {
             blackout: 'Marca todos los números del cartón',
         };
         document.getElementById('objectiveText').textContent = objectives[this.config.gameMode];
+
+        // Actualizar visualización del modo de juego
+        this.updateGameModeDisplay();
+    }
+
+    updateGameModeDisplay() {
+        const panel = document.getElementById('currentGameModePanel');
+        const titleEl = document.getElementById('currentModeTitle');
+        const descEl = document.getElementById('currentModeDescription');
+        const instructionEl = document.getElementById('currentModeInstruction');
+        const patternGrid = document.getElementById('patternGrid');
+
+        if (!panel || !this.gameState.isPlaying) {
+            if (panel) panel.style.display = 'none';
+            return;
+        }
+
+        panel.style.display = 'block';
+
+        const modeInfo = {
+            classic: {
+                title: '🎯 Clásico',
+                description: 'Cartón completo',
+                instruction: 'Marca todos los 24 números del cartón',
+                pattern: Array(25).fill(true), // Todos activos excepto centro
+            },
+            line: {
+                title: '📏 Línea',
+                description: 'Una línea completa',
+                instruction: 'Completa una línea horizontal, vertical o diagonal',
+                pattern: this.getLinePattern(),
+            },
+            corners: {
+                title: '📐 4 Esquinas',
+                description: 'Las cuatro esquinas',
+                instruction: 'Marca las 4 esquinas del cartón',
+                pattern: this.getCornersPattern(),
+            },
+            pattern: {
+                title: '✨ Patrón Especial',
+                description: 'Patrón personalizado',
+                instruction: 'Completa el patrón mostrado',
+                pattern: Array(25).fill(false),
+            },
+            blackout: {
+                title: '🌑 Apagón Total',
+                description: 'Todo el cartón',
+                instruction: 'Marca absolutamente todos los números',
+                pattern: Array(25).fill(true),
+            },
+        };
+
+        const mode = modeInfo[this.config.gameMode] || modeInfo.classic;
+
+        titleEl.textContent = mode.title;
+        descEl.textContent = mode.description;
+        instructionEl.innerHTML = `<i class="fas fa-info-circle"></i><span>${mode.instruction}</span>`;
+
+        // Generar grid visual
+        patternGrid.innerHTML = '';
+        mode.pattern.forEach((isActive, index) => {
+            const cell = document.createElement('div');
+            cell.className = 'pattern-cell';
+
+            if (index === 12) {
+                cell.classList.add('free');
+                cell.textContent = '★';
+            } else if (isActive) {
+                cell.classList.add('active');
+                cell.textContent = '✓';
+            } else {
+                cell.textContent = '';
+            }
+
+            patternGrid.appendChild(cell);
+        });
+    }
+
+    getLinePattern() {
+        // Mostrar ejemplo de línea horizontal superior
+        const pattern = Array(25).fill(false);
+        for (let i = 0; i < 5; i++) {
+            pattern[i] = true;
+        }
+        pattern[12] = false; // Centro siempre libre
+        return pattern;
+    }
+
+    getCornersPattern() {
+        const pattern = Array(25).fill(false);
+        pattern[0] = true; // Superior izquierda
+        pattern[4] = true; // Superior derecha
+        pattern[20] = true; // Inferior izquierda
+        pattern[24] = true; // Inferior derecha
+        return pattern;
     }
 
     // ===== PANEL DE ADMINISTRADOR =====
