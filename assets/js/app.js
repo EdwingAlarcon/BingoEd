@@ -517,6 +517,8 @@ class BingoApp {
                             corporate: this.corporate,
                             nextCardNumber: this.multiplayer.nextCardNumber,
                             players: Array.from(this.multiplayer.players.values()),
+                            darkTheme: this.config.darkTheme,
+                            colorTheme: this.config.colorTheme,
                         },
                     });
 
@@ -627,6 +629,37 @@ class BingoApp {
                         const companyAddressInput = document.getElementById('companyAddress');
                         if (companyAddressInput && this.corporate.address) {
                             companyAddressInput.value = this.corporate.address;
+                        }
+                    }
+
+                    // Sincronizar temas del anfitrión
+                    if (data.data.darkTheme !== undefined) {
+                        this.config.darkTheme = data.data.darkTheme;
+                        if (data.data.darkTheme) {
+                            document.body.classList.add('dark-theme');
+                            const icon = document.querySelector('#themeToggle i');
+                            if (icon) icon.className = 'fas fa-sun';
+                        } else {
+                            document.body.classList.remove('dark-theme');
+                            const icon = document.querySelector('#themeToggle i');
+                            if (icon) icon.className = 'fas fa-moon';
+                        }
+                    }
+
+                    if (data.data.colorTheme) {
+                        document.body.classList.remove(
+                            'theme-ocean',
+                            'theme-sunset',
+                            'theme-forest',
+                            'theme-corporate'
+                        );
+                        if (data.data.colorTheme !== 'default') {
+                            document.body.classList.add(`theme-${data.data.colorTheme}`);
+                        }
+                        this.config.colorTheme = data.data.colorTheme;
+                        const colorThemeSelect = document.getElementById('colorTheme');
+                        if (colorThemeSelect) {
+                            colorThemeSelect.value = data.data.colorTheme;
                         }
                     }
 
