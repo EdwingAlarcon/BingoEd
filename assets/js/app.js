@@ -939,7 +939,8 @@ class BingoApp {
                     // Actualizar configuración y sincronizar con UI
                     this.config.gameMode = data.data.gameMode;
                     this.config.drawSpeed = data.data.drawSpeed;
-                    this.multiplayer.nextCardNumber = data.data.nextCardNumber;
+                    // NO sobrescribir nextCardNumber - cada invitado mantiene su contador local
+                    // que ya fue sincronizado previamente
 
                     // Actualizar selectores de UI
                     const gameModeSelect = document.getElementById('gameMode');
@@ -1786,7 +1787,7 @@ class BingoApp {
                 data: {
                     gameMode: this.config.gameMode,
                     drawSpeed: this.config.drawSpeed,
-                    nextCardNumber: this.multiplayer.nextCardNumber,
+                    // No enviar nextCardNumber - cada invitado usa su contador local
                 },
             });
         }
