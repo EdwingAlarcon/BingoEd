@@ -2829,7 +2829,7 @@ class BingoApp {
         }, 5000);
     }
 
-    addSystemMessage(text) {
+    addSystemMessage(text, showNotification = false) {
         const chatMessages = document.getElementById('chatMessages');
         if (!chatMessages) return; // Chat no disponible
 
@@ -2843,6 +2843,28 @@ class BingoApp {
         messageDiv.innerHTML = `<div class="message-text"><i class="fas fa-info-circle"></i> ${text}</div>`;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // NO mostrar notificaciones para mensajes del sistema por defecto
+        // Solo se activan si se pasa showNotification=true explícitamente
+        if (showNotification) {
+            const chatPanel = document.getElementById('chatPanel');
+            const chatVisible =
+                chatPanel &&
+                chatPanel.style.display !== 'none' &&
+                window.getComputedStyle(chatPanel).display !== 'none';
+
+            if (!chatVisible || !this.isChatInView()) {
+                this.showChatNotification({
+                    player: 'Sistema',
+                    text: text,
+                    isHost: false,
+                    timestamp: new Date().toLocaleTimeString('es-CO', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                });
+            }
+        }
     }
 
     escapeHtml(text) {
