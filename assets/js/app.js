@@ -540,6 +540,8 @@ class BingoApp {
                             players: Array.from(this.multiplayer.players.values()),
                             darkTheme: this.config.darkTheme,
                             colorTheme: this.config.colorTheme,
+                            awardedPrizes: this.gameState.awardedPrizes,
+                            winners: this.gameState.winners,
                         },
                     });
 
@@ -595,6 +597,23 @@ class BingoApp {
                     this.gameState.calledNumbers = data.data.calledNumbers || [];
                     this.gameState.currentNumber = data.data.currentNumber;
                     this.gameState.isPlaying = data.data.isPlaying;
+
+                    // Sincronizar premios entregados y ganadores
+                    if (data.data.awardedPrizes) {
+                        this.gameState.awardedPrizes = data.data.awardedPrizes;
+                        this.updatePrizesDisplay();
+                    }
+                    if (data.data.winners) {
+                        this.gameState.winners = data.data.winners;
+                        // Renderizar lista de ganadores
+                        const winnersList = document.getElementById('winnersList');
+                        if (winnersList) {
+                            winnersList.innerHTML = '';
+                            data.data.winners.forEach(winner => {
+                                this.addToWinnersList(winner);
+                            });
+                        }
+                    }
 
                     // Sincronizar modo de juego
                     if (data.data.gameMode) {
@@ -931,14 +950,19 @@ class BingoApp {
                     this.gameState.isPlaying = true;
                     this.gameState.calledNumbers = [];
                     this.gameState.currentNumber = null;
-                    this.gameState.winners = [];
+                    this.gameState.winners = []; // Resetear ganadores del juego actual
                     this.gameState.hasWinner = false;
-                    this.gameState.awardedPrizes = [];
+                    // NO resetear awardedPrizes - deben mantenerse entre juegos
                     this.gameState.startTime = Date.now();
 
                     // Actualizar configuración y sincronizar con UI
                     this.config.gameMode = data.data.gameMode;
                     this.config.drawSpeed = data.data.drawSpeed;
+                    // Sincronizar premios entregados desde el anfitrión
+                    if (data.data.awardedPrizes) {
+                        this.gameState.awardedPrizes = data.data.awardedPrizes;
+                        this.updatePrizesDisplay();
+                    }
                     // NO sobrescribir nextCardNumber - cada invitado mantiene su contador local
                     // que ya fue sincronizado previamente
 
@@ -1775,9 +1799,9 @@ class BingoApp {
         this.gameState.isPlaying = true;
         this.gameState.calledNumbers = [];
         this.gameState.currentNumber = null;
-        this.gameState.winners = [];
+        this.gameState.winners = []; // Resetear ganadores del juego actual
         this.gameState.hasWinner = false;
-        this.gameState.awardedPrizes = []; // Resetear premios entregados
+        // NO resetear awardedPrizes - deben mantenerse entre juegos
         this.gameState.startTime = Date.now();
 
         // Si es anfitrión, notificar a todos que hay un nuevo juego
@@ -1787,6 +1811,7 @@ class BingoApp {
                 data: {
                     gameMode: this.config.gameMode,
                     drawSpeed: this.config.drawSpeed,
+                    awardedPrizes: this.gameState.awardedPrizes, // Sincronizar premios entregados
                     // No enviar nextCardNumber - cada invitado usa su contador local
                 },
             });
