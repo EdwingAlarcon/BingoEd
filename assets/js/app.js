@@ -479,6 +479,15 @@ class BingoApp {
     }
 
     handleMultiplayerMessage(data, conn) {
+        // Encontrar el peerId asociado con esta conexión
+        let senderId = null;
+        for (const [peerId, connection] of this.multiplayer.connections) {
+            if (connection === conn) {
+                senderId = peerId;
+                break;
+            }
+        }
+
         switch (data.type) {
             case 'player_join':
                 if (this.multiplayer.isHost) {
@@ -574,7 +583,7 @@ class BingoApp {
                                 type: 'chat_message',
                                 data: data.data,
                             },
-                            data.from
+                            senderId
                         ); // Excluir al remitente original
                     }
                 }
@@ -788,6 +797,17 @@ class BingoApp {
                 // Detener auto-sorteo en todos los clientes si está activo
                 if (this.gameState.autoPlay) {
                     this.toggleAutoDraw();
+                }
+
+                // Si es el host, rebroadcastear a todos los demás jugadores
+                if (this.multiplayer.isHost) {
+                    this.broadcastToPlayers(
+                        {
+                            type: 'winner_announced',
+                            data: data.data,
+                        },
+                        senderId
+                    ); // Excluir al remitente original
                 }
                 break;
 
