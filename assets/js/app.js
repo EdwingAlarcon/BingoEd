@@ -1396,6 +1396,10 @@ class BingoApp {
                 won = this.checkCorners(card);
                 winType = '4 Esquinas';
                 break;
+            case 'pattern':
+                won = this.checkPattern(card);
+                winType = 'Patrón X';
+                break;
             case 'blackout':
                 won = this.checkFullCard(card);
                 winType = 'Apagón Total';
@@ -1450,6 +1454,17 @@ class BingoApp {
     checkCorners(card) {
         const corners = [0, 4, 20, 24];
         return corners.every(i => card.marked[i]);
+    }
+
+    checkPattern(card) {
+        // Patrón en X: ambas diagonales completas
+        const diag1 = [0, 6, 12, 18, 24]; // Diagonal \
+        const diag2 = [4, 8, 12, 16, 20]; // Diagonal /
+
+        const diag1Complete = diag1.every(i => card.marked[i]);
+        const diag2Complete = diag2.every(i => card.marked[i]);
+
+        return diag1Complete && diag2Complete;
     }
 
     getPrizeType(winType) {
@@ -2022,10 +2037,10 @@ class BingoApp {
                 pattern: this.getCornersPattern(),
             },
             pattern: {
-                title: '✨ Patrón Especial',
-                description: 'Patrón personalizado',
-                instruction: 'Completa el patrón mostrado',
-                pattern: Array(25).fill(false),
+                title: '✨ Patrón X',
+                description: 'Forma de X con ambas diagonales',
+                instruction: 'Completa ambas diagonales del cartón formando una X',
+                pattern: this.getPatternX(),
             },
             blackout: {
                 title: '🌑 Apagón Total',
@@ -2077,6 +2092,23 @@ class BingoApp {
         pattern[4] = true; // Superior derecha
         pattern[20] = true; // Inferior izquierda
         pattern[24] = true; // Inferior derecha
+        return pattern;
+    }
+
+    getPatternX() {
+        const pattern = Array(25).fill(false);
+        // Diagonal principal (de arriba-izquierda a abajo-derecha)
+        pattern[0] = true;
+        pattern[6] = true;
+        pattern[12] = true; // Centro
+        pattern[18] = true;
+        pattern[24] = true;
+        // Diagonal secundaria (de arriba-derecha a abajo-izquierda)
+        pattern[4] = true;
+        pattern[8] = true;
+        // pattern[12] ya está en true (centro compartido)
+        pattern[16] = true;
+        pattern[20] = true;
         return pattern;
     }
 

@@ -118,6 +118,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
+    gap: 1rem;
 }
 
 .logo {
@@ -181,6 +182,12 @@ body {
     border-radius: var(--border-radius);
     font-size: 0.9rem;
     font-weight: 600;
+    color: var(--text-primary);
+}
+
+body.dark-theme .connection-status {
+    color: #f1f5f9;
+    background: rgba(51, 65, 85, 0.8);
 }
 
 .connection-status i.fa-circle {
@@ -1372,15 +1379,27 @@ body.dark-theme .pattern-cell {
 
 @media (max-width: 768px) {
     .header {
-        padding: 1rem;
+        padding: 0.75rem;
+        flex-wrap: wrap;
     }
 
     .logo h1 {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
 
     .header-controls {
         gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .connection-status {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.75rem;
+        white-space: nowrap;
+    }
+
+    #playersCount {
+        font-size: 0.75rem;
     }
 
     .btn-primary,
@@ -1423,6 +1442,37 @@ body.dark-theme .pattern-cell {
 
 /* Media query para pantallas muy pequeñas (móviles) */
 @media (max-width: 480px) {
+    .header {
+        padding: 0.5rem 1rem;
+    }
+
+    .logo {
+        gap: 0.5rem;
+    }
+
+    .logo i {
+        font-size: 1.5rem;
+    }
+
+    .logo h1 {
+        font-size: 1.1rem;
+    }
+
+    .header-controls {
+        gap: 0.3rem;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .connection-status {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
+    }
+
+    #playersCount {
+        font-size: 0.7rem;
+    }
+
     .cards-grid {
         gap: 0.5rem;
     }
