@@ -828,6 +828,21 @@ class BingoApp {
                 }
                 break;
 
+            case 'stats_reset':
+                // Resetear estadísticas sincronizadas por el anfitrión
+                if (!this.multiplayer.isHost) {
+                    this.stats = {
+                        gamesPlayed: 0,
+                        bingosWon: 0,
+                        numberFrequency: {},
+                        totalTime: 0,
+                    };
+                    this.saveStats();
+                    this.updateStatsDisplay();
+                    this.addSystemMessage('El anfitrión ha reseteado las estadísticas');
+                }
+                break;
+
             case 'theme_sync':
                 // Sincronizar tema visual del anfitrión
                 if (!this.multiplayer.isHost) {
@@ -2035,6 +2050,12 @@ class BingoApp {
     updateAdminPermissions() {
         const isHost = this.multiplayer.isHost || !this.multiplayer.enabled;
 
+        // Mostrar u ocultar botón de reset según rol
+        const resetStatsBtn = document.getElementById('resetStats');
+        if (resetStatsBtn) {
+            resetStatsBtn.style.display = isHost ? 'block' : 'none';
+        }
+
         // Tabs que solo el anfitrión puede acceder
         const prizesTab = document.querySelector('.tab-btn[data-tab="prizes"]');
         const settingsTab = document.querySelector('.tab-btn[data-tab="settings"]');
@@ -2061,7 +2082,8 @@ class BingoApp {
 
             if (savePrizesBtn) savePrizesBtn.disabled = true;
             if (saveCorporateBtn) saveCorporateBtn.disabled = true;
-            if (resetStatsBtn) resetStatsBtn.disabled = true;
+            // Ocultar botón de reset para invitados
+            if (resetStatsBtn) resetStatsBtn.style.display = 'none';
 
             // Deshabilitar inputs de premios
             [
@@ -2204,6 +2226,14 @@ class BingoApp {
             };
             this.saveStats();
             this.updateStatsDisplay();
+
+            // Sincronizar reset con todos los jugadores si es anfitrión
+            if (this.multiplayer.enabled && this.multiplayer.isHost) {
+                this.broadcastToPlayers({
+                    type: 'stats_reset',
+                    data: {},
+                });
+            }
         }
     }
 
