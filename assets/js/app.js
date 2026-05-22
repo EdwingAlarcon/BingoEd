@@ -241,8 +241,6 @@ class BingoApp {
         document
             .getElementById('enableChat')
             .addEventListener('change', e => this.toggleChat(e.target.checked));
-        document.getElementById('resetStats').addEventListener('click', () => this.resetStats());
-
         // Configuración Corporativa
         document
             .getElementById('companyLogo')
@@ -316,12 +314,7 @@ class BingoApp {
 
         // Inicializar PeerJS
         this.multiplayer.peer = new Peer(this.multiplayer.roomCode, {
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                ],
-            },
+            config: CONFIG.PEER_CONFIG,
         });
 
         this.multiplayer.peer.on('open', id => {
@@ -364,12 +357,7 @@ class BingoApp {
 
         // Inicializar PeerJS
         this.multiplayer.peer = new Peer({
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                ],
-            },
+            config: CONFIG.PEER_CONFIG,
         });
 
         this.multiplayer.peer.on('open', id => {
@@ -756,7 +744,7 @@ class BingoApp {
                         );
 
                         // Renderizar cartones
-                        this.renderBingoCards();
+                        this.renderCards();
                     }
 
                     // Actualizar UI
@@ -1084,9 +1072,10 @@ class BingoApp {
                     : player.disconnected
                     ? 'fa-user-slash'
                     : 'fa-user';
+                const safeName = this.escapeHtml(player.name);
                 const playerName = player.disconnected
-                    ? `<strong style="opacity: 0.5;">${player.name}</strong> <span style="color: #ef4444; font-size: 0.75rem;">(Desconectado)</span>`
-                    : `<strong>${player.name}</strong>`;
+                    ? `<strong style="opacity: 0.5;">${safeName}</strong> <span style="color: #ef4444; font-size: 0.75rem;">(Desconectado)</span>`
+                    : `<strong>${safeName}</strong>`;
                 const hostBadge = player.isHost
                     ? '<span style="background: var(--accent-color); color: white; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem;">ANFITRIÓN</span>'
                     : '';
@@ -1284,7 +1273,7 @@ class BingoApp {
         if (!this.config.autoMark || this.gameState.calledNumbers.includes(number)) {
             card.marked[index] = !card.marked[index];
             this.updateCardProgress(card);
-            this.renderCards();
+            this.patchCard(card);
 
             if (card.marked[index]) {
                 this.checkWin(card);
@@ -1357,15 +1346,35 @@ class BingoApp {
             if (index !== -1 && !card.marked[index]) {
                 card.marked[index] = true;
                 this.updateCardProgress(card);
+                this.patchCard(card);
                 this.checkWin(card);
             }
         });
-        this.renderCards();
     }
 
     updateCardProgress(card) {
         const marked = this.countMarked(card);
         card.progress = (marked / 24) * 100;
+    }
+
+    patchCard(card) {
+        const cardEl = document.querySelector(`[data-card-id="${card.id}"]`);
+        if (!cardEl) return;
+
+        for (let i = 0; i < 25; i++) {
+            if (i === 12) continue; // FREE space
+            const cell = cardEl.querySelector(`.bingo-cell[data-index="${i}"]`);
+            if (cell) cell.classList.toggle('marked', !!card.marked[i]);
+        }
+
+        const progressBar = cardEl.querySelector('.progress-bar');
+        if (progressBar) progressBar.style.width = card.progress + '%';
+
+        const statsSpans = cardEl.querySelectorAll('.card-stats span');
+        if (statsSpans.length >= 2) {
+            statsSpans[0].innerHTML = `<i class="fas fa-check-circle"></i> ${this.countMarked(card)}/24`;
+            statsSpans[1].innerHTML = `<i class="fas fa-percentage"></i> ${Math.round(card.progress)}%`;
+        }
     }
 
     countMarked(card) {
@@ -1668,6 +1677,9 @@ class BingoApp {
     createConfetti() {
         const confetti = document.querySelector('.confetti');
         confetti.innerHTML = '';
+
+        // Limpiar el DOM tras la animación más larga (800ms delay + 5000ms duración)
+        setTimeout(() => { confetti.innerHTML = ''; }, 6000);
 
         const colors = [
             '#6366f1',
@@ -2288,9 +2300,11 @@ class BingoApp {
     }
 
     loadStats() {
-        const saved = localStorage.getItem('bingoStats');
-        if (saved) {
-            this.stats = JSON.parse(saved);
+        try {
+            const saved = localStorage.getItem('bingoStats');
+            if (saved) this.stats = JSON.parse(saved);
+        } catch (e) {
+            console.warn('Error al cargar estadísticas:', e);
         }
     }
 
@@ -2398,7 +2412,8 @@ class BingoApp {
     }
 
     shareGame() {
-        const shareText = `¡Únete a mi partida de Bingo!\nCódigo de sala: ${this.roomCode}`;
+        const code = this.multiplayer.enabled ? this.multiplayer.roomCode : this.roomCode;
+        const shareText = `¡Únete a mi partida de Bingo!\nCódigo de sala: ${code}`;
 
         if (navigator.share) {
             navigator.share({
@@ -2524,10 +2539,14 @@ class BingoApp {
     }
 
     loadPrizes() {
-        const saved = localStorage.getItem('bingoPrizes');
-        if (saved) {
-            this.prizes = JSON.parse(saved);
-            this.updatePrizesUI();
+        try {
+            const saved = localStorage.getItem('bingoPrizes');
+            if (saved) {
+                this.prizes = JSON.parse(saved);
+                this.updatePrizesUI();
+            }
+        } catch (e) {
+            console.warn('Error al cargar premios:', e);
         }
     }
 
@@ -2631,11 +2650,11 @@ class BingoApp {
         if (this.gameState.calledNumbers.length % 5 === 0) {
             const modoTexto =
                 {
-                    full: 'Bingo completo',
+                    classic: 'Bingo completo',
                     line: 'Línea',
                     corners: 'Cuatro esquinas',
-                    letter: 'Letra',
-                    diagonal: 'Diagonal',
+                    pattern: 'Patrón X',
+                    blackout: 'Apagón total',
                 }[this.config.gameMode] || this.config.gameMode;
 
             texto += `. Jugando ${modoTexto}`;
@@ -2793,7 +2812,7 @@ class BingoApp {
 
         messageDiv.innerHTML = `
             <div class="message-header">
-                <strong>${message.player}</strong>
+                <strong>${this.escapeHtml(message.player)}</strong>
                 ${message.isHost ? '<span class="host-badge">Anfitrión</span>' : ''}
                 <span class="message-time">${message.timestamp}</span>
             </div>
@@ -2852,7 +2871,7 @@ class BingoApp {
             <div class="notification-content">
                 <i class="fas fa-comment"></i>
                 <div>
-                    <strong>${message.isHost ? '👑 ' : ''}${message.player}</strong>
+                    <strong>${message.isHost ? '👑 ' : ''}${this.escapeHtml(message.player)}</strong>
                     <p>${this.escapeHtml(message.text.substring(0, 50))}${
             message.text.length > 50 ? '...' : ''
         }</p>
@@ -3047,7 +3066,13 @@ class BingoApp {
 
         const saved = localStorage.getItem('corporateSettings');
         if (saved) {
-            this.corporate = JSON.parse(saved);
+            try {
+                this.corporate = JSON.parse(saved);
+            } catch (e) {
+                console.warn('Error al cargar configuración corporativa:', e);
+                localStorage.removeItem('corporateSettings');
+                return;
+            }
 
             // Actualizar UI
             const companyNameInput = document.getElementById('companyName');
